@@ -1,0 +1,53 @@
+name: Security Testing with Selenium & OWASP ZAP
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security-test:
+    runs-on: ubuntu-latest
+
+    services:
+      zap:
+        image: owasp/zap2docker-stable
+        ports:
+          - 8080:8080
+        options: >-
+          --entrypoint=/zap/zap.sh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Start OWASP ZAP
+        run: |
+          docker run -d --name zap -p 8080:8080 owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080
+
+      - name: Run Selenium Tests with ZAP
+        run: |
+          mvn clean test -Dtest=SecurityTest
+
+      - name: Run ZAP Passive Scan
+        run: |
+          docker exec zap zap-cli quick-scan --self-contained --progress-bar https://your-web-application.com
+
+      - name: Generate ZAP Report
+        run: |
+          docker exec zap zap-cli report -o zap_report.html -f html
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-security-report
+          path: zap_report.html
