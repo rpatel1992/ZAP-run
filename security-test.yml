@@ -40,7 +40,7 @@ jobs:
 
       - name: Run ZAP Passive Scan
         run: |
-          docker exec zap zap-cli quick-scan --self-contained --progress-bar https://your-web-application.com
+          docker exec zap zap-cli quick-scan --self-contained --progress-bar https://www.mrtesting.com
 
       - name: Generate ZAP Report
         run: |
